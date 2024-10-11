@@ -173,9 +173,7 @@ def writeCP2K(Dstn_cont2, TMP, M_new, OATPO, params, angles):
         TMP = TMP[:TMP.index("COORD_FILE_NAME")+15] + f" {Dstn_cont2}.xyz " + TMP[(TMP[TMP.index("COORD_FILE_NAME")+15:]).index(r"\n") + TMP.index("COORD_FILE_NAME")+15:]
         TMP = TMP[:TMP.index("ABC")+3] + f" {' '.join([str(k) for k in new_params])} " + TMP[(TMP[TMP.index("ABC")+3:]).index(r"\n") + TMP.index("ABC")+3:]
         TMP = TMP[:TMP.index("ALPHA_BETA_GAMMA")+16] + f" {' '.join([str(k) for k in new_angles])} " + TMP[(TMP[TMP.index("ALPHA_BETA_GAMMA")+16:]).index(r"\n") + TMP.index("ALPHA_BETA_GAMMA")+16:]
-        
-        
-        fo.write(TMP.replace(r'\n', "\n").replace(r'\t', "\t"))
+        fo.write(TMP.replace(r'\n', "\n").replace(r'\t', "\t")[1:-1])
        
     # write xyz input
     with open(f"{Dstn_cont2}.xyz", 'w', encoding="utf-8") as fo:
@@ -1048,11 +1046,13 @@ def makeStructures(LC, CP, TMP, OATPO, params, angles):
 if driver == "ESPRESSO":
     LC, CP, TMP, OATPO, params, angles = readStructureQE()
     makeStructures(LC, CP, TMP, OATPO, params, angles)
+    os.system(f"mkdir Structures_{driver}")
+    os.system(f"cp Dst??/Dst??_??/Dst??_??.in Structures_{driver}/")
     
 elif driver == "CP2K":
     LC, CP, TMP, OATPO, params, angles = readStructureCP2K()
     makeStructures(LC, CP, TMP, OATPO, params, angles)
-    
-os.system(f"mkdir Structures_{driver}")
-os.system(f"cp Dst??/Dst??_??/Dst??_??.inp Structures_{driver}/")
-os.system(f"cp Dst??/Dst??_??/Dst??_??.xyz Structures_{driver}/")
+    os.system(f"mkdir Structures_{driver}")
+    os.system(f"cp Dst??/Dst??_??/Dst??_??.inp Structures_{driver}/")
+    os.system(f"cp Dst??/Dst??_??/Dst??_??.xyz Structures_{driver}/")
+
