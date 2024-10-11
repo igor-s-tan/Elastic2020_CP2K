@@ -1,0 +1,119 @@
+&GLOBAL
+   PREFERRED_DIAG_LIBRARY  SCALAPACK
+PROJECT test
+  RUN_TYPE GEO_OPT
+  PRINT_LEVEL MEDIUM
+&END GLOBAL
+
+&FORCE_EVAL
+
+    STRESS_TENSOR ANALYTICAL
+
+  &DFT
+  
+    CHARGE 0
+    
+
+    &QS
+    
+      METHOD xTB
+      EPS_DEFAULT 1.0E-12
+      EXTRAPOLATION PS
+      EXTRAPOLATION_ORDER 4
+      
+      &xTB
+      
+        DO_EWALD .TRUE.
+        CHECK_ATOMIC_CHARGES .FALSE.
+	COULOMB_INTERACTION .TRUE.      
+	DO_NONBONDED .FALSE.
+	USE_HALOGEN_CORRECTION .TRUE.
+
+	&PARAMETER
+            DISPERSION_PARAMETER_FILE dftd3.dat
+        
+	D3BJ_PARAM 0.4289 4.4407
+
+	D3BJ_SCALING 1.000 0.7875 
+
+    
+	PARAM_FILE_NAME xTB_parameters
+             
+        &END PARAMETER
+      &END XTB
+    &END QS
+    
+    &POISSON
+    
+        PERIODIC XYZ
+        POISSON_SOLVER PERIODIC
+    
+        &EWALD
+            !ALPHA 2.0
+            !EWALD_ACCURACY 1.00000000E-010
+            !EPSILON 1.00000000E-008
+            EWALD_TYPE SPME
+            !GMAX 41 41 41
+            !O_SPLINE 6
+        &END EWALD
+      
+    &END POISSON
+    
+      &SCF
+      SCF_GUESS ATOMIC
+      MAX_SCF  30
+      EPS_SCF 1.e-6
+      &OT
+        MINIMIZER DIIS
+        PRECONDITIONER FULL_ALL
+        ENERGY_GAP 0.01
+      &END
+      &OUTER_SCF
+        EPS_SCF 1.e-6
+        MAX_SCF 250
+      &END
+    &END SCF 
+    &PRINT
+        &END PRINT
+    
+  &END DFT
+  
+  &SUBSYS
+    &CELL
+      PERIODIC XYZ
+	ABC  7.0842 9.1734 11.547
+	  ALPHA_BETA_GAMMA 90.0 97.988 90.0 
+    &END CELL
+    
+    &TOPOLOGY
+    
+      COORD_FILE_FORMAT XYZ
+      COORD_FILE_NAME para.xyz
+  
+    
+    &END TOPOLOGY
+    
+  &END SUBSYS
+&END FORCE_EVAL
+
+
+&MOTION
+   &GEO_OPT
+     OPTIMIZER  BFGS
+     MAX_ITER  800
+     &BFGS
+     &END BFGS
+   &END GEO_OPT
+   &PRINT
+	&STRESS
+	 &EACH
+	  GEO_OPT 1
+	 &END EACH
+	&END STRESS
+   &END PRINT
+ 
+&END MOTION
+
+
+
+
