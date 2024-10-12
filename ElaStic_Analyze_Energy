@@ -77,7 +77,7 @@ if (mthd != 'Stress' and mthd != 'Energy'):
 l3  = INFO.readline()
 cod = l3.split()[-1]
 
-if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO'):
+if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO' and cod != 'CP2K'):
     sys.exit('\n.... Oops ERROR: The DFT code is NOT clear !?!?!?'\
              '\n                 Something is WRONG in the "INFO_ElaStic" file.\n')
 
@@ -178,6 +178,8 @@ for i in range(1, ECs+1):
             if (cod=='WIEN2k'  ): energy_output = Dstn_num+'_Converged.scf'
             if (cod=='exciting'): energy_output = 'INFO.OUT'
             if (cod=='ESPRESSO'): energy_output = Dstn_num+'.out'
+            if (cod=='CP2K'): energy_output = Dstn_num+'.out'
+            
 
             if (os.path.exists(energy_output)):
                 if (cod == 'WIEN2k'):
@@ -194,6 +196,20 @@ for i in range(1, ECs+1):
                     for line in open(energy_output,'r'):
                         if (line.find('!    total energy')>=0):
                             energy=float(line.split()[-2])
+                            
+                if (cod == 'CP2K'):
+                    not_found = []
+                    with open(energy_output,'r') as file:
+                        line = repr(file.read())
+                        index = line.find("GEOMETRY OPTIMIZATION COMPLETED")
+                        line = line[index:]
+                        if index != -1:   
+                            energy = float(line[line.index("Total energy:")+13:(line[line.index("Total energy:")+13:]).index(r"\n") + line.index("Total energy:")+13].split()[0])
+                        else:
+                            not_found.append(Dstn_num)
+                    for k in not_found:
+                        print(f"{k} energy not found")
+                            
 
                 s = j-(NoP+1)/2
                 r = 2*mdr*s/(NoP-1)
@@ -209,7 +225,7 @@ for i in range(1, ECs+1):
     os.chdir('../')
 #--------------------------------------------------------------------------------------------------
 
-warnings.simplefilter('ignore', np.RankWarning)
+#warnings.simplefilter('ignore', np.RankWarning)
 
 #%!%!%--- Directory management ---%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%
 if (os.path.exists('Energy-vs-Strain_old')):
@@ -232,7 +248,9 @@ if (cod == 'exciting'):
     CONV = ToGPa * factorial(ordr)*2.
 if (cod == 'ESPRESSO'):
     CONV = ToGPa * factorial(ordr)*1.
-
+if (cod == 'CP2K'):
+    CONV = ToGPa * factorial(ordr)*2.
+     
 for i in range(1, ECs+1):
     if (i<10):
         Dstn = 'Dst0'+str(i)
@@ -291,7 +309,7 @@ for i in range(1, ECs+1):
         while (len(strain) > j): 
             emax  = max(strain)
             emin  = min(strain)
-            emax  = max(abs(emin),abs(emax))
+            emax  = fmax(fabs(emin),fabs(emax))
             coeffs= polyfit(strain, energy, j)
             if (ordr == 2):
                 Cij  = coeffs[j-2]*CONV/V0         # in GPa unit 
@@ -314,7 +332,7 @@ for i in range(1, ECs+1):
         while (len(strain) > j+1): 
             emax = max(strain)
             emin = min(strain)
-            emax = max(abs(emin),abs(emax))
+            emax = fmax(abs(emin),abs(emax))
 
             S = 0
             for k in range(len(strain)):
@@ -343,11 +361,11 @@ for i in range(1, ECs+1):
             if (abs(strain[len(strain)-1]-emax) < 1.e-7):
                 strain.pop()
                 energy.pop()
-    fD.close()
-    fE.close()
+    FD.close()
+    FE.close()
     
     #-- Plotting ----------------------------------------------------------------------------------
-    fig, ax = plt.subplots()
+    
 #plot for SUM(Cij)
 #   for key in fcc.keys():
 #       x = np.array(fcc[key][0])
@@ -355,17 +373,16 @@ for i in range(1, ECs+1):
 #       ax.plot(x,y,'o-',label="n="+key)
 #       ax.set_xlabel('max strain')
 #       ax.set_ylabel('SUM(Cij)')
-        
+    fig, ax = plt.subplots()
     for key in cve.keys():
         x = np.array(cve[key][0])
         y = np.array(cve[key][1])
         ax.plot(x,y,'o-',label="n="+key)
         ax.set_xlabel('max_strain')
         ax.set_ylabel('CV error')
-
-    ax.legend()
-    plt.title('plot for '+ Dstn+'_'+LSi_dic[l]+', n = Order of polynomial fit')
-plt.show()
+        ax.set_title('plot for '+ Dstn + '_' + f"{i} {key}" + ', n = Order of polynomial fit')
+    fig.legend()
+    fig.savefig(f"test_{i}.png")
 
 os.chdir('../')
 

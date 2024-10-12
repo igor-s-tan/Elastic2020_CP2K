@@ -190,7 +190,7 @@ if (mthd != 'Stress' and mthd != 'Energy'):
 l3  = INFO.readline()
 cod = l3.split()[-1]
 
-if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO'):
+if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO' and cod != "CP2K"):
     sys.exit('\n.... Oops ERROR: The DFT code is NOT clear !?!?!?'\
              '\n                 Something is WRONG in the "INFO_ElaStic" file.\n')
 
@@ -315,6 +315,8 @@ if (cod == 'WIEN2k'):
 if (cod == 'exciting'):
     CONV = ToGPa * 2.
 if (cod == 'ESPRESSO'):
+    CONV = ToGPa * 1.
+if (cod == 'CP2K'):
     CONV = ToGPa * 1.
 
 A3 = A3 * CONV/V0

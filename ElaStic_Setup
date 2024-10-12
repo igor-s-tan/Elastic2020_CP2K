@@ -161,12 +161,10 @@ def writeQE(Dstn_cont2, TMP, M_new):
     
 def writeCP2K(Dstn_cont2, TMP, M_new, OATPO, params, angles):
     
-    
+    OATPO_TEMP = []
     for atom in OATPO:
-        temp = np.matmul(M_new, np.matmul(np.linalg.inv(param2vec(params, angles)), np.array([atom[1], atom[2], atom[3]])))
-        atom[1] = temp[0]
-        atom[2] = temp[1]
-        atom[3] = temp[2]
+        temp = np.matmul(np.transpose(M_new), np.array([atom[1], atom[2], atom[3]]))
+        OATPO_TEMP.append([atom[0], temp[0], temp[1], temp[2]])
     # write c2pk input
     new_params, new_angles = vec2param(M_new)
     with open(Dstn_cont2 +'.inp', 'w', encoding="utf-8") as fo:
@@ -177,9 +175,9 @@ def writeCP2K(Dstn_cont2, TMP, M_new, OATPO, params, angles):
        
     # write xyz input
     with open(f"{Dstn_cont2}.xyz", 'w', encoding="utf-8") as fo:
-        string = f"{len(OATPO)}\n"
+        string = f"{len(OATPO_TEMP)}\n"
         string += f"{Dstn_cont2} distorted structure\n"
-        for atom in OATPO:
+        for atom in OATPO_TEMP:
             string += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
         fo.write(string)
         
@@ -187,18 +185,15 @@ def writeCP2K(Dstn_cont2, TMP, M_new, OATPO, params, angles):
 def calcSGroupNumber(nat, OATPO, a1, a2, a3, alpha, beta, gamma):
     si = open('sgroup.in','w')
     print('P',file=si)
-    print(a1, a2, a3, alpha, beta, gamma,file=si)
-    print("\n ",file=si)
+    si.write(f"{a1:.15f} {a2:.15f} {a3:.15f} {np.degrees(alpha):.15f} {np.degrees(beta):.15f} {np.degrees(gamma):.15f}\n\n")
     print(nat,file=si)
     for i in range(nat-1,-1,-1):
-        print( '%15.10f'%(float(OATPO[i][1])), \
-                    '%15.10f'%(float(OATPO[i][2])), \
-                    '%15.10f'%(float(OATPO[i][3])),file=si)
-        print(str(OATPO[i][0]),file=si)
+        si.write(f"{float(OATPO[i][1]):.15f} {float(OATPO[i][2]):.15f} {float(OATPO[i][3]):.15f}\n{OATPO[i][0]}\n")
+
     si.close()
     
-    os.system('sgroup sgroup.in 1>sgroup.out 2>sgroup.err; rm -f sgroup.in')
-
+    os.system('sgroup sgroup.in 1>sgroup.out 2>sgroup.err')
+# ; rm -f sgroup.in
     if (os.path.getsize('sgroup.err') != 0):
         fer  = open('sgroup.err', 'r')
         lines= fer.readlines()
@@ -879,7 +874,8 @@ def readStructureQE():
     #%!%!%--- Calculating the Space-Group Number and classifying it ---%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!
     
     LC, SGN = calcSGroupNumber(nat, OATPO, a1, a2, a3, alpha, beta, gamma)
-    
+    print(a1, a2, a3, alpha, beta, gamma)
+    print(OATPO)
     if (ibrav != 0):
         if (ibrav == 4 and 143 <= SGN and SGN <= 167): ibrav = 5
 
@@ -921,13 +917,15 @@ def readStructureCP2K():
     angles = np.array([float(i) for i in TMP[TMP.index("ALPHA_BETA_GAMMA")+16:(TMP[TMP.index("ALPHA_BETA_GAMMA")+16:]).index(r"\n") + TMP.index("ALPHA_BETA_GAMMA")+16].split()]) / 180 * np.pi
     
     
+    
     # read the xyz file
     atoms = []
     with open(f"{xyz_file}", 'r') as file:
         for i, line in enumerate(file):
             if i > 1:
                 line = line.split()
-                atoms.append([line[0], float(line[1]), float(line[2]), float(line[3])])
+                temp = np.matmul(np.transpose(np.linalg.inv(param2vec(params, angles))), np.array([float(line[1]), float(line[2]), float(line[3])]))
+                atoms.append([line[0], temp[0], temp[1], temp[2]])
                 
                 
     LC, SGN = calcSGroupNumber(len(atoms), atoms, params[0], params[1], params[2], angles[0], angles[1], angles[2])   
@@ -954,7 +952,6 @@ def makeStructures(LC, CP, TMP, OATPO, params, angles):
     #%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%#
     #mthd ordr LC ptn CP mdr
     Lag_strain_list = getLagStrainList(mthd, ordr, LC)
-
     M_old= CP
     fdis = open('Distorted_Parameters','w')
     cont1= 0
