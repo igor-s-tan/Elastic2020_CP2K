@@ -937,7 +937,7 @@ def readStructureCP2K():
                 '\nMethod of calculation           =', mthd           ,\
                 '\nDFT code name                   = CP2K',\
                 '\nSpace-group number              =', SGN            ,\
-                '\nVolume of equilibrium unit cell =', abs(np.linalg.det(CP)), '[a.u^3]'  ,\
+                '\nVolume of equilibrium unit cell =', abs(1.8897259886**3 * np.linalg.det(CP)), '[a.u^3]'  ,\
                 '\nMaximum Lagrangian strain       =', mdr            ,\
                 '\nNumber of distorted structures  =', NoP,file=INFO)
     INFO.close()
