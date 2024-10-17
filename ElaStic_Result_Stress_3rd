@@ -183,7 +183,7 @@ if (mthd != 'Stress' and mthd != 'Energy'):
 l3  = INFO.readline()
 cod = l3.split()[-1]
 
-if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO'):
+if (cod != 'WIEN2k' and cod != 'exciting' and cod != 'ESPRESSO' and cod != 'CP2K'):
     sys.exit('\n.... Oops ERROR: The DFT code is NOT clear !?!?!?'\
              '\n                 Something is WRONG in the "INFO_ElaStic" file.\n')
 
@@ -353,6 +353,8 @@ if (cod == 'exciting'):
     CONV = 1.
 if (cod == 'ESPRESSO'):
     CONV =-2./10.
+if (cod == "CP2K"):
+    CONV = -1.
 
 #%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%#
 #%!%!% ------------ Calculating the second derivative and Cross-Validation Error ----------- %!%!%#

@@ -76,7 +76,7 @@ if (mthd != 'Stress' and mthd != 'Energy'):
 l3  = INFO.readline()
 cod = l3.split()[-1]
 
-if (cod != 'WIEN2k' and cod != 'exiting' and cod != 'ESPRESSO'):
+if (cod != 'WIEN2k' and cod != 'exiting' and cod != 'ESPRESSO' and cod != 'CP2K'):
     sys.exit('\n.... Oops ERROR: The DFT code is NOT clear !?!?!? \
               \n                 Something is WRONG in INFO_ElaStic file.          \n')
 
@@ -285,7 +285,25 @@ for i in Lag_strain_list:
                 else: 
                     print('\n.... Oops WARNING: Where is the "'+ \
                            Dstn_num +'.out" file !?!?!?\n')
-
+            elif (cod == 'CP2K'):
+                if (os.path.exists("stress")):
+                    strings = []
+                    with open("stress", 'r') as file:
+                        for line in reversed(list(file)):
+                            if "Analytical stress tensor" in line:
+                                break
+                            strings.append(line)
+                    strings = reversed(strings)
+                    count = 0
+                    for line in strings:
+                        line = line.split()
+                        if len(line) == 5 and count < 3:
+                            sig[count, 0] = line[2]
+                            sig[count, 1] = line[3]
+                            sig[count, 2] = line[4]
+                            count += 1
+                            print(line)
+                 
 #--------------------------------------------------------------------------------------------------
             dm  = def_matrix
             idm = np.linalg.inv(dm)
@@ -314,7 +332,7 @@ for i in Lag_strain_list:
     os.chdir('../')
 #--------------------------------------------------------------------------------------------------
 
-warnings.simplefilter('ignore', np.RankWarning)
+#warnings.simplefilter('ignore', np.RankWarning)
 
 #%!%!%--- Directory management ---%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%
 if (os.path.exists('Stress-vs-Strain_old')):
@@ -352,6 +370,8 @@ os.system('cp -f ../Dst??/Dst??_Lagrangian-stress.dat .')
 #%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%!%#
 if (cod == 'ESPRESSO'):
     CONV = (1-ordr)/10.
+elif (cod == 'CP2K'):
+    CONV = 1.
 
 
 
@@ -441,7 +461,7 @@ for i in range(1, NoD+1):
             while (len(strain) > j):
                 emax=max(strain)
                 emin=min(strain)
-                emax=max(abs(emin),abs(emax))
+                emax=fmax(fabs(emin),fabs(emax))
                 coeffs = np.polyfit(strain, stress, j)
                 if (ordr == 2):
                     Cij = coeffs[j-1] * CONV         # in GPa unit 
@@ -465,7 +485,7 @@ for i in range(1, NoD+1):
             while (len(strain) > j+1): 
                 emax = max(strain)
                 emin = min(strain)
-                emax = max(abs(emin),abs(emax))
+                emax = fmax(fabs(emin),fabs(emax))
 
                 S = 0
                 for k in range(len(strain)):
@@ -515,9 +535,9 @@ for i in range(1, NoD+1):
             ax.set_ylabel('CV error')
 
         ax.legend()
-        plt.title('plot for '+ Dstn+'_'+LSi_dic[l]+', n = Order of polynomial fit')
+        ax.set_title('plot for '+ Dstn+'_'+LSi_dic[l]+', n = Order of polynomial fit')
 
-plt.show()
+        plt.savefig(f"test_{i}_{l}.png")
 
 
 os.chdir('../')
